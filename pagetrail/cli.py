@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 from typing import Dict
 
-from .model import Book
+from .model import Book, ReadingSession
 from .storage import Storage
 
 
@@ -34,6 +34,16 @@ def cmd_list(_: argparse.Namespace, __: Storage, books: Dict[str, Book]) -> None
         print(f"- {book.id}: {book.title} ({book.author or 'unknown'})")
 
 
+def cmd_log(args: argparse.Namespace, storage: Storage, books: Dict[str, Book]) -> None:
+    book = books.get(args.id)
+    if book is None:
+        raise SystemExit(f"Unknown book id '{args.id}'.")
+    session = ReadingSession(book_id=book.id, pages_read=args.pages, note=args.note)
+    book.sessions.append(session)
+    storage.save(books)
+    print(f"Logged {args.pages} pages for '{book.title}'.")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="pagetrail", description="Simple reading tracker")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -47,6 +57,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_list = sub.add_parser("list", help="List existing books")
     p_list.set_defaults(func=cmd_list)
+
+    p_log = sub.add_parser("log", help="Log a reading session")
+    p_log.add_argument("id", help="Book id")
+    p_log.add_argument("pages", type=int, help="Number of pages read")
+    p_log.add_argument("--note", help="Optional short note")
+    p_log.set_defaults(func=cmd_log)
 
     return parser
 
@@ -65,4 +81,3 @@ def main(argv: None | list[str] = None) -> None:
 
 if __name__ == "__main__":
     main()
-
