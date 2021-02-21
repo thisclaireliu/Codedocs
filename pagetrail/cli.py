@@ -31,7 +31,21 @@ def cmd_list(_: argparse.Namespace, __: Storage, books: Dict[str, Book]) -> None
         print("No books yet.")
         return
     for book in books.values():
-        print(f"- {book.id}: {book.title} ({book.author or 'unknown'})")
+        total_pages = sum(s.pages_read for s in book.sessions)
+        suffix = f", total={total_pages}" if total_pages else ""
+        print(f"- {book.id}: {book.title} ({book.author or 'unknown'}){suffix}")
+
+
+def cmd_summary(args: argparse.Namespace, __: Storage, books: Dict[str, Book]) -> None:
+    book = books.get(args.id)
+    if book is None:
+        raise SystemExit(f"Unknown book id '{args.id}'.")
+    if not book.sessions:
+        print(f"No sessions for '{book.title}' yet.")
+        return
+    total_pages = sum(s.pages_read for s in book.sessions)
+    last = book.sessions[-1]
+    print(f"{book.title} -> total={total_pages} pages, last={last.pages_read} pages")
 
 
 def cmd_log(args: argparse.Namespace, storage: Storage, books: Dict[str, Book]) -> None:
@@ -63,6 +77,10 @@ def build_parser() -> argparse.ArgumentParser:
     p_log.add_argument("pages", type=int, help="Number of pages read")
     p_log.add_argument("--note", help="Optional short note")
     p_log.set_defaults(func=cmd_log)
+
+    p_summary = sub.add_parser("summary", help="Show summary for a book")
+    p_summary.add_argument("id", help="Book id")
+    p_summary.set_defaults(func=cmd_summary)
 
     return parser
 
