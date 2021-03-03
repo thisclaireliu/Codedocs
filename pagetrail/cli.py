@@ -1,14 +1,13 @@
 import argparse
-from pathlib import Path
 from typing import Dict
 
 from .model import Book, ReadingSession
+from .config import get_data_dir
 from .storage import Storage
 
 
 def get_storage() -> Storage:
-    home = Path.home()
-    data_dir = home / ".pagetrail"
+    data_dir = get_data_dir()
     data_dir.mkdir(parents=True, exist_ok=True)
     return Storage(data_dir / "books.json")
 
