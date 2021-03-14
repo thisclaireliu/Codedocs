@@ -3,6 +3,7 @@ from typing import Dict
 
 from .model import Book, ReadingSession
 from .config import get_data_dir
+from .errors import PagetrailError
 from .storage import Storage
 
 
@@ -14,7 +15,7 @@ def get_storage() -> Storage:
 
 def cmd_add(args: argparse.Namespace, storage: Storage, books: Dict[str, Book]) -> None:
     if args.id in books:
-        raise SystemExit(f"Book with id '{args.id}' already exists.")
+        raise PagetrailError(f"Book with id '{args.id}' already exists.")
     books[args.id] = Book(
         id=args.id,
         title=args.title,
@@ -38,7 +39,7 @@ def cmd_list(_: argparse.Namespace, __: Storage, books: Dict[str, Book]) -> None
 def cmd_summary(args: argparse.Namespace, __: Storage, books: Dict[str, Book]) -> None:
     book = books.get(args.id)
     if book is None:
-        raise SystemExit(f"Unknown book id '{args.id}'.")
+        raise PagetrailError(f"Unknown book id '{args.id}'.")
     if not book.sessions:
         print(f"No sessions for '{book.title}' yet.")
         return
@@ -50,7 +51,7 @@ def cmd_summary(args: argparse.Namespace, __: Storage, books: Dict[str, Book]) -
 def cmd_log(args: argparse.Namespace, storage: Storage, books: Dict[str, Book]) -> None:
     book = books.get(args.id)
     if book is None:
-        raise SystemExit(f"Unknown book id '{args.id}'.")
+        raise PagetrailError(f"Unknown book id '{args.id}'.")
     session = ReadingSession(book_id=book.id, pages_read=args.pages, note=args.note)
     book.sessions.append(session)
     storage.save(books)
@@ -93,7 +94,10 @@ def main(argv: None | list[str] = None) -> None:
     if func is None:
         parser.print_help()
         return
-    func(args, storage, books)
+    try:
+        func(args, storage, books)
+    except PagetrailError as exc:
+        raise SystemExit(str(exc)) from exc
 
 
 if __name__ == "__main__":
