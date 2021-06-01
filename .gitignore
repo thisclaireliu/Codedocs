@@ -1,2 +1,10 @@
 AGENTS.md
+__pycache__/
+*.py[cod]
+.pytest_cache/
 AGENTS.md
+.DS_Store
+*.log
+env/
+dist/
+build/
