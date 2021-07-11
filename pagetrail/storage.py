@@ -1,5 +1,4 @@
 import json
-from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
@@ -25,13 +24,14 @@ class Storage:
                 added_at=datetime.fromisoformat(payload["added_at"]),
             )
             for s in payload.get("sessions", []):
-                session = ReadingSession(
-                    book_id=book_id,
-                    pages_read=s["pages_read"],
-                    created_at=datetime.fromisoformat(s["created_at"]),
-                    note=s.get("note"),
+                book.sessions.append(
+                    ReadingSession(
+                        book_id=book_id,
+                        pages_read=s["pages_read"],
+                        created_at=datetime.fromisoformat(s["created_at"]),
+                        note=s.get("note"),
+                    )
                 )
-                book.sessions.append(session)
             books[book_id] = book
         return books
 
@@ -45,11 +45,12 @@ class Storage:
                 "added_at": book.added_at.isoformat(),
                 "sessions": [
                     {
-                        **asdict(session),
+                        "book_id": session.book_id,
+                        "pages_read": session.pages_read,
                         "created_at": session.created_at.isoformat(),
+                        "note": session.note,
                     }
                     for session in book.sessions
                 ],
             }
         self.path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
